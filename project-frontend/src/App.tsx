@@ -1,9 +1,13 @@
 import React from 'react'
+import DashboardComponent from './components/DashboardComponent'
+import FormComponent from './components/FormComponent'
 
 const App = () => {
   return (
-    <div>
-      <h1>Hello world</h1>
+    <div className='flex flex-col justify-center items-center w-[100%]'>
+      <h1 className='mt-2'>Family Height Tracker</h1>
+      <DashboardComponent/>
+      <FormComponent/>
     </div>
   )
 }
