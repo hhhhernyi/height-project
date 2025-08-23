@@ -3,7 +3,8 @@ import React from 'react'
 const FormComponent = () => {
     function handleSubmitForm(e:  React.FormEvent) {
         e.preventDefault()
-        console.log("Form submitted")
+        console.log("Form submitted!")
+        window.alert("Form submitted!");
     }
   return (
     <div>
