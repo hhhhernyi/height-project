@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "family heights",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
