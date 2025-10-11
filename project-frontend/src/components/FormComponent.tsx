@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import CheckPin from "./CheckPinComponent";
+import { postHeights } from "../services/heightService";
+
 
 type HeightState = {
   hy: string;
@@ -30,24 +32,32 @@ const FormComponent: React.FC<FormComponentProps> = ({ familyData, onDataSubmitt
   // For now, just console.log instead of POST
   const submitFormData = async (pin: string) => {
     setIsSubmitting(true);
-
+  
     const payload = Object.entries(heights)
       .filter(([, value]) => value !== "")
       .map(([key, value]) => ({
         name: key.toUpperCase(),
         height: parseFloat(value),
       }));
-
-    console.log("Form data to submit:", { records: payload, pin });
-
-    // Reset form
-    setHeights({ hy: "", hp: "", hs: "", hr: "" });
-    setIsPinVisible(false);
-    setIsSubmitting(false);
-
-    // Call parent refresh (no-op for now)
-    onDataSubmitted();
+  
+    try {
+      console.log("Submitting to backend:", { records: payload, pin });
+      const response = await postHeights({ records: payload, pin });
+      console.log("Server response:", response);
+  
+      // Reset form
+      setHeights({ hy: "", hp: "", hs: "", hr: "" });
+      setIsPinVisible(false);
+  
+      // Refresh chart
+      onDataSubmitted();
+    } catch (err) {
+      console.error("Error posting data:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+  
 
   const handleSubmitForm = (e: React.FormEvent) => {
     e.preventDefault();
