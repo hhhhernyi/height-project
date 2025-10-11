@@ -3,7 +3,14 @@
 import React, { useState } from "react";
 import CheckPin from "./CheckPinComponent";
 
-type HeightState = { hy: string; hp: string; hs: string; hr: string };
+type HeightState = {
+  hy: string;
+  hp: string;
+  hs: string;
+  hr: string;
+  [key: string]: string; // ✅ this allows dynamic access like heights[key]
+};
+
 
 interface FormComponentProps {
   familyData: { [key: string]: number | string | null } | null;
@@ -81,7 +88,7 @@ const FormComponent: React.FC<FormComponentProps> = ({ familyData, onDataSubmitt
             <input
               id={`${key}-height`}
               name={key}
-              value={(heights as any)[key]}
+              value={heights[key] || ""}
               onChange={handleChange}
               type="number"
               className="mt-1 w-full p-2 border border-slate-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"

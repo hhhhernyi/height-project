@@ -13,6 +13,7 @@ type HistoricalRecord = {
   hr: number;
 };
 
+
 function App() {
   const [historyData, setHistoryData] = useState<HistoricalRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);

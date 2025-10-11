@@ -1,5 +1,3 @@
-// DashboardComponent.tsx
-
 import {
   LineChart,
   Line,
@@ -19,23 +17,24 @@ type HistoricalRecord = {
   hr: number;
 };
 
-const sampleData: HistoricalRecord[] = [
-  { date: "2025-01-01", hy: 170.1, hp: 165.0, hs: 120.0, hr: 115.0 },
-  { date: "2025-01-15", hy: 170.2, hp: 165.1, hs: 120.1, hr: 115.3 },
-  { date: "2025-01-30", hy: 170.5, hp: 165.2, hs: 120.2, hr: 115.8 },
-  { date: "2025-02-15", hy: 170.6, hp: 165.3, hs: 120.3, hr: 116.0 },
-  { date: "2025-03-01", hy: 170.7, hp: 165.4, hs: 120.4, hr: 116.2 },
-  { date: "2025-03-15", hy: 170.8, hp: 165.5, hs: 120.5, hr: 116.4 },
-];
+type DashboardProps = {
+  historyData: HistoricalRecord[];
+  isLoading: boolean;
+  error: string | null;
+};
 
-const DashboardComponent: React.FC = () => {
-  const graphData = sampleData.map((record) => ({
-    name: record.date.substring(5),
+const DashboardComponent: React.FC<DashboardProps> = ({ historyData, isLoading, error }) => {
+  const graphData = historyData.map((record) => ({
+    name: record.date.substring(5), // e.g. "01-15"
     hy: record.hy,
     hp: record.hp,
     hs: record.hs,
     hr: record.hr,
   }));
+
+  if (isLoading) return <p className="text-center text-slate-500">Loading chart...</p>;
+  if (error) return <p className="text-center text-red-500">{error}</p>;
+  if (graphData.length === 0) return <p className="text-center text-slate-500">No data available.</p>;
 
   return (
     <div>
@@ -51,7 +50,6 @@ const DashboardComponent: React.FC = () => {
             <YAxis stroke="#64748b" label={{ value: "Height (cm)", angle: -90, position: "insideLeft" }} />
             <Tooltip />
             <Legend />
-
             <Line type="monotone" dataKey="hy" stroke="#4f46e5" strokeWidth={2} name="HY" dot={false} />
             <Line type="monotone" dataKey="hp" stroke="#ef4444" strokeWidth={2} name="HP" dot={false} />
             <Line type="monotone" dataKey="hs" stroke="#10b981" strokeWidth={2} name="HS" dot={false} />

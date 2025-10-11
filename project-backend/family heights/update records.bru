@@ -1,0 +1,29 @@
+meta {
+  name: update records
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:4000/heights
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "pin": "0706",
+    "records": [
+      { "name": "HY", "height": 171.2 },
+      { "name": "HP", "height": 165.5 },
+      { "name": "HS", "height": 120.0 },
+      { "name": "HR", "height": 115.0 }
+    ]
+  }
+  
+}

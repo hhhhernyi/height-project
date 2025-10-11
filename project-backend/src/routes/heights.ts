@@ -2,6 +2,12 @@ import { Router } from "express";
 import { supabase } from "../db/supabase";
 
 const router = Router();
+const nameToId: Record<string, number> = {
+  HY: 1,
+  HP: 2,
+  HS: 3,
+  HR: 4
+};
 
 // GET /heights → fetch all rows
 router.get("/", async (req, res) => {
@@ -11,7 +17,7 @@ router.get("/", async (req, res) => {
     .order("measurement_date", { ascending: true });
 
   if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+  res.status(200).json(data);
 });
 
 // POST /heights → insert new row(s)
@@ -30,7 +36,7 @@ router.post("/", async (req, res) => {
   // So we need to map the incoming records accordingly
   const today = new Date().toISOString().split("T")[0];
   const rows = records.map((r) => ({
-    user_id: r.name,              // e.g. "HY", "HP"
+    child_id: nameToId[r.name], // converts "HY" → 1
     measurement_date: today,
     height_cm: r.height,
   }));
