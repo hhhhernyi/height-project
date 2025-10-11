@@ -1,21 +1,6 @@
-import {
-  LineChart,
-  Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Legend,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-
-type HistoricalRecord = {
-  date: string;
-  hy: number;
-  hp: number;
-  hs: number;
-  hr: number;
-};
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { parseISO, format } from "date-fns";
+import type { HistoricalRecord } from "../type";
 
 type DashboardProps = {
   historyData: HistoricalRecord[];
@@ -23,42 +8,49 @@ type DashboardProps = {
   error: string | null;
 };
 
-const DashboardComponent: React.FC<DashboardProps> = ({ historyData, isLoading, error }) => {
-  const graphData = historyData.map((record) => ({
-    name: record.date.substring(5), // e.g. "01-15"
-    hy: record.hy,
-    hp: record.hp,
-    hs: record.hs,
-    hr: record.hr,
-  }));
-
-  if (isLoading) return <p className="text-center text-slate-500">Loading chart...</p>;
-  if (error) return <p className="text-center text-red-500">{error}</p>;
-  if (graphData.length === 0) return <p className="text-center text-slate-500">No data available.</p>;
+export default function DashboardComponent({ historyData, isLoading, error }: DashboardProps) {
+  if (isLoading) return <div className="text-slate-600">Loading chart...</div>;
+  if (error) return <div className="text-red-600">{error}</div>;
+  if (!historyData || historyData.length === 0) return <div className="text-slate-600">No data yet.</div>;
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-slate-700 mb-4 text-center">
-        Family Height Dashboard
-      </h2>
+    <ResponsiveContainer width="100%" height={360}>
+      <LineChart data={historyData}>
+        <XAxis
+          dataKey="date"
+          type="category"          // ensure strings are treated as categories, not numbers
+          tickFormatter={(dateStr: string) => {
+            // Your dates are YYYY-MM-DD; parse ISO safely
+            const d = parseISO(dateStr);
+            return format(d, "dd-MMM-yyyy");
+          }}
+          tickMargin={12}
+          angle={-30}          // tilt labels 30° upward to the left
+          textAnchor="end" 
+          tick={{ fontSize: 10 }}
+        />
+        <YAxis domain={[0, "dataMax + 10"]} tickCount={6} />
+        <Tooltip
+          labelFormatter={(dateStr) => format(parseISO(String(dateStr)), "dd-MMM-yyyy")}
+        />
+       <Legend
+  layout="horizontal"       // horizontal row of items
+  verticalAlign="bottom"    // push legend to the bottom
+  align="right"             // align it to the right side
+  wrapperStyle={{
+    bottom: 80,   // pushes it 20px above the bottom edge
+    right: 0,     // keep it aligned to the right
+  }}
+ 
+/>
 
-      <div className="w-full h-[350px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={graphData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-            <CartesianGrid stroke="#e2e8f0" strokeDasharray="5 5" />
-            <XAxis dataKey="name" stroke="#64748b" />
-            <YAxis stroke="#64748b" label={{ value: "Height (cm)", angle: -90, position: "insideLeft" }} />
-            <Tooltip />
-            <Legend />
-            <Line type="monotone" dataKey="hy" stroke="#4f46e5" strokeWidth={2} name="HY" dot={false} />
-            <Line type="monotone" dataKey="hp" stroke="#ef4444" strokeWidth={2} name="HP" dot={false} />
-            <Line type="monotone" dataKey="hs" stroke="#10b981" strokeWidth={2} name="HS" dot={false} />
-            <Line type="monotone" dataKey="hr" stroke="#f59e0b" strokeWidth={2} name="HR" dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+
+        
+        <Line type="monotone" dataKey="hy" stroke="#ef4444" dot={false} connectNulls />
+        <Line type="monotone" dataKey="hp" stroke="#3b82f6" dot={false} connectNulls />
+        <Line type="monotone" dataKey="hs" stroke="#f97316" dot={false} connectNulls />
+        <Line type="monotone" dataKey="hr" stroke="#22c55e" dot={false} connectNulls />
+      </LineChart>
+    </ResponsiveContainer>
   );
-};
-
-export default DashboardComponent;
+}
