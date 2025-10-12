@@ -2,14 +2,14 @@ import React, { useState } from "react";
 
 interface CheckPinProps {
   isVisible: boolean;
-  onPinValidated: (pin: string) => void; // now passes pin back
+  onPinValidated: (pin: string) => void;
   onCancel: () => void;
 }
 
 const CheckPin: React.FC<CheckPinProps> = ({ isVisible, onPinValidated, onCancel }) => {
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState("");
-  const [showPin, setShowPin] = useState(false); // 👈 new state
+  const [showPin, setShowPin] = useState(false);
 
   const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPinInput(e.target.value);
@@ -36,13 +36,14 @@ const CheckPin: React.FC<CheckPinProps> = ({ isVisible, onPinValidated, onCancel
     >
       <h3 className="text-md font-semibold mb-3 text-slate-800">Please Verify Your PIN</h3>
       <form onSubmit={handlePinSubmit} className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
+        {/* Input with inline toggle */}
+        <div className="relative">
           <input
-            type={showPin ? "text" : "password"} // 👈 toggle type
+            type={showPin ? "text" : "password"}
             value={pinInput}
             onChange={handlePinChange}
             maxLength={4}
-            className={`flex-1 p-2 border ${
+            className={`w-full p-2 pr-12 border ${
               pinError ? "border-red-500" : "border-slate-300"
             } rounded-md text-base focus:ring-2 focus:ring-indigo-500`}
             placeholder="Enter 4-digit PIN"
@@ -51,7 +52,7 @@ const CheckPin: React.FC<CheckPinProps> = ({ isVisible, onPinValidated, onCancel
           <button
             type="button"
             onClick={() => setShowPin((prev) => !prev)}
-            className="px-2 py-1 text-sm border border-slate-400 rounded-md bg-white hover:bg-slate-100"
+            className="absolute inset-y-0 right-0 flex items-center px-3 text-sm text-slate-600 hover:text-slate-900"
           >
             {showPin ? "Hide" : "Show"}
           </button>
