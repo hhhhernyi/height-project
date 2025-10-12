@@ -1,21 +1,17 @@
-// FormComponent.tsx
-
 import React, { useState } from "react";
 import CheckPin from "./CheckPinComponent";
 import { postHeights } from "../services/heightService";
-
 
 type HeightState = {
   hy: string;
   hp: string;
   hs: string;
   hr: string;
-  [key: string]: string; // ✅ this allows dynamic access like heights[key]
+  [key: string]: string;
 };
 
-
 interface FormComponentProps {
-  familyData: { [key: string]: number | string | null } | null;
+  familyData: { hy: number | null; hp: number | null; hs: number | null; hr: number | null } | null;
   onDataSubmitted: () => void;
 }
 
@@ -29,27 +25,19 @@ const FormComponent: React.FC<FormComponentProps> = ({ familyData, onDataSubmitt
     setHeights((prev) => ({ ...prev, [name]: value }));
   };
 
-  // For now, just console.log instead of POST
   const submitFormData = async (pin: string) => {
     setIsSubmitting(true);
-  
     const payload = Object.entries(heights)
       .filter(([, value]) => value !== "")
       .map(([key, value]) => ({
         name: key.toUpperCase(),
         height: parseFloat(value),
       }));
-  
+
     try {
-      console.log("Submitting to backend:", { records: payload, pin });
-      const response = await postHeights({ records: payload, pin });
-      console.log("Server response:", response);
-  
-      // Reset form
+      await postHeights({ records: payload, pin });
       setHeights({ hy: "", hp: "", hs: "", hr: "" });
       setIsPinVisible(false);
-  
-      // Refresh chart
       onDataSubmitted();
     } catch (err) {
       console.error("Error posting data:", err);
@@ -57,34 +45,32 @@ const FormComponent: React.FC<FormComponentProps> = ({ familyData, onDataSubmitt
       setIsSubmitting(false);
     }
   };
-  
 
   const handleSubmitForm = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isSubmitDisabled) {
-      setIsPinVisible(true);
-    }
+    if (!isSubmitDisabled) setIsPinVisible(true);
   };
 
-  const isSubmitDisabled =
-    Object.values(heights).every((value) => value === "") || isSubmitting;
+  const isSubmitDisabled = Object.values(heights).every((v) => v === "") || isSubmitting;
 
   return (
     <div className="w-full max-w-md mx-auto bg-white rounded-xl shadow-lg p-6">
+      {/* Last Recorded Heights */}
       <div className="mb-6 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
         <h3 className="font-bold text-indigo-800 mb-2">Last Recorded Heights</h3>
         {familyData ? (
           <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-700">
-            <li><span className="font-medium">HY:</span> {familyData.last_hy_height || "--"} cm</li>
-            <li><span className="font-medium">HP:</span> {familyData.last_hp_height || "--"} cm</li>
-            <li><span className="font-medium">HS:</span> {familyData.last_hs_height || "--"} cm</li>
-            <li><span className="font-medium">HR:</span> {familyData.last_hr_height || "--"} cm</li>
+            <li><span className="font-medium">HY:</span> {familyData.hy ?? "--"} cm</li>
+            <li><span className="font-medium">HP:</span> {familyData.hp ?? "--"} cm</li>
+            <li><span className="font-medium">HS:</span> {familyData.hs ?? "--"} cm</li>
+            <li><span className="font-medium">HR:</span> {familyData.hr ?? "--"} cm</li>
           </ul>
         ) : (
           <p className="text-sm text-slate-500">No data available.</p>
         )}
       </div>
 
+      {/* Input Form */}
       <form onSubmit={handleSubmitForm} className="flex flex-col gap-5">
         <h2 className="text-xl font-semibold text-slate-700 text-center">
           Enter Today&apos;s Height
@@ -116,6 +102,7 @@ const FormComponent: React.FC<FormComponentProps> = ({ familyData, onDataSubmitt
         </button>
       </form>
 
+      {/* PIN modal */}
       <CheckPin
         isVisible={isPinVisible}
         onPinValidated={(pin) => submitFormData(pin)}

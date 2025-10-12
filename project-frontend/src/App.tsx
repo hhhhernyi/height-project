@@ -1,120 +1,134 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
 import DashboardComponent from "./components/DashboardComponent";
+import CheckboxLegend from "./components/checkboxLegend";
 import FormComponent from "./components/FormComponent";
-import type { HistoricalRecord } from "./type";
 import { fetchHeights } from "./services/heightService";
+import type { HistoricalRecord } from "./type";
 
-type RawHeightEntry = {
+// Raw API record from backend
+interface HeightApiRecord {
   id: number;
   child_id: number;
   measurement_date: string;
   height_cm: number;
-};
+}
 
-type ChildKey = "hy" | "hp" | "hs" | "hr";
-type GroupedRecord = { date: string } & Partial<Record<ChildKey, number>>;
-
-function App() {
+export default function App() {
   const [historyData, setHistoryData] = useState<HistoricalRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [latestSummary, setLatestSummary] = useState<{
+    hy: number | null;
+    hp: number | null;
+    hs: number | null;
+    hr: number | null;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchHistoryData = useCallback(async () => {
+  const [visibleLines, setVisibleLines] = useState({
+    hy: true,
+    hp: true,
+    hs: true,
+    hr: true,
+  });
+
+  async function loadData() {
     setIsLoading(true);
-    setError(null);
     try {
-      const rawData: RawHeightEntry[] = await fetchHeights();
+      const raw: HeightApiRecord[] = await fetchHeights();
 
-      // Group entries by date
-      const grouped: Record<string, GroupedRecord> = {};
-      const idToKey: Record<number, ChildKey> = {
-        1: "hy",
-        2: "hp",
-        3: "hs",
-        4: "hr",
-      };
+      // --- Build chart data grouped by date ---
+      const grouped: Record<
+        string,
+        { date: string; hy?: number; hp?: number; hs?: number; hr?: number }
+      > = {};
 
-      rawData.forEach((entry) => {
-        const date = entry.measurement_date;
-        if (!grouped[date]) grouped[date] = { date };
-        const key = idToKey[entry.child_id];
-        if (key) grouped[date][key] = entry.height_cm;
+      for (const rec of raw) {
+        const date = rec.measurement_date;
+        if (!grouped[date]) {
+          grouped[date] = { date };
+        }
+        switch (rec.child_id) {
+          case 1:
+            grouped[date].hy = rec.height_cm;
+            break;
+          case 2:
+            grouped[date].hp = rec.height_cm;
+            break;
+          case 3:
+            grouped[date].hs = rec.height_cm;
+            break;
+          case 4:
+            grouped[date].hr = rec.height_cm;
+            break;
+        }
+      }
+
+      const transformed: HistoricalRecord[] = Object.values(grouped)
+        .map((g) => ({
+          date: g.date,
+          hy: g.hy ?? null,
+          hp: g.hp ?? null,
+          hs: g.hs ?? null,
+          hr: g.hr ?? null,
+        }))
+        .sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+
+      setHistoryData(transformed);
+
+      // --- Build latest summary per child ---
+      const sorted = [...raw].sort(
+        (a, b) =>
+          new Date(a.measurement_date).getTime() -
+          new Date(b.measurement_date).getTime()
+      );
+      const latestMap: Record<number, HeightApiRecord> = {};
+      for (const rec of sorted) {
+        latestMap[rec.child_id] = rec; // later overwrites earlier
+      }
+      setLatestSummary({
+        hy: latestMap[1]?.height_cm ?? null,
+        hp: latestMap[2]?.height_cm ?? null,
+        hs: latestMap[3]?.height_cm ?? null,
+        hr: latestMap[4]?.height_cm ?? null,
       });
-
-      // Forward-fill missing values
-      let lastHy: number | null = null;
-      let lastHp: number | null = null;
-      let lastHs: number | null = null;
-      let lastHr: number | null = null;
-
-      const formatted: HistoricalRecord[] = Object.values(grouped)
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .map((record) => {
-          if (record.hy != null) lastHy = record.hy;
-          if (record.hp != null) lastHp = record.hp;
-          if (record.hs != null) lastHs = record.hs;
-          if (record.hr != null) lastHr = record.hr;
-
-          return {
-            date: record.date,
-            hy: lastHy,
-            hp: lastHp,
-            hs: lastHs,
-            hr: lastHr,
-          };
-        });
-
-      setHistoryData(formatted);
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      setError("Could not load height history data.");
-      setHistoryData([]);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }
 
   useEffect(() => {
-    fetchHistoryData();
-  }, [fetchHistoryData]);
-
-  const lastRecord =
-    historyData.length > 0 ? historyData[historyData.length - 1] : null;
-  const familyDataForForm = lastRecord
-    ? {
-        last_hy_height: lastRecord.hy,
-        last_hp_height: lastRecord.hp,
-        last_hs_height: lastRecord.hs,
-        last_hr_height: lastRecord.hr,
-      }
-    : null;
+    loadData();
+  }, []);
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
-      <header className="w-full max-w-5xl mx-auto mb-6">
-        <h1 className="text-3xl font-extrabold text-slate-800 text-center">
-          Family Height Tracker
-        </h1>
-      </header>
+    <div className="min-h-screen bg-slate-50 p-4">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Left: Chart + Legend */}
+          <div className="md:w-2/3 w-full bg-white rounded shadow p-4">
+            <CheckboxLegend
+              visibleLines={visibleLines}
+              setVisibleLines={setVisibleLines}
+            />
+            <DashboardComponent
+              historyData={historyData}
+              isLoading={isLoading}
+              error={error}
+              visibleLines={visibleLines}
+            />
+          </div>
 
-      <div className="w-full max-w-6xl mx-auto grid gap-6 grid-cols-1 md:grid-cols-12">
-        <div className="bg-white rounded-xl shadow-lg p-4 w-[95%] mx-auto md:w-full md:col-span-8">
-          <DashboardComponent
-            historyData={historyData}
-            isLoading={isLoading}
-            error={error}
-          />
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg p-4 w-[95%] mx-auto md:w-full md:col-span-4">
-          <FormComponent
-            familyData={familyDataForForm}
-            onDataSubmitted={fetchHistoryData}
-          />
+          {/* Right: Form */}
+          <div className="md:w-1/3 w-full bg-white rounded shadow p-4">
+            <h2 className="text-lg font-semibold mb-2">Controls</h2>
+            <FormComponent familyData={latestSummary} onDataSubmitted={loadData} />
+          </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
-
-export default App;
